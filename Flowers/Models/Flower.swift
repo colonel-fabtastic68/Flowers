@@ -73,22 +73,23 @@ struct StemPosition {
     let y: Double
     let rotation: Double
     let mirrored: Bool  // Horizontal flip for variety
+    let size: CGFloat   // Individual flower size
     
     static let allPositions: [StemPosition] = [
         // Row 1 (back) - 3 stems with varied rotation
-        StemPosition(id: 0, x: -50, y: -110, rotation: -7, mirrored: false),
-        StemPosition(id: 1, x: 0, y: -115, rotation: 3, mirrored: true),
-        StemPosition(id: 2, x: 50, y: -110, rotation: 9, mirrored: false),
+        StemPosition(id: 0, x: -170, y: -150, rotation: -7, mirrored: false, size: 90),
+        StemPosition(id: 1, x: -90, y: -240, rotation: 3, mirrored: true, size: 80),
+        StemPosition(id: 2, x: 30, y: -255, rotation: 9, mirrored: false, size: 75),
         
         // Row 2 (middle) - 3 stems with varied rotation
-        StemPosition(id: 3, x: -40, y: -85, rotation: -4, mirrored: true),
-        StemPosition(id: 4, x: 0, y: -90, rotation: -2, mirrored: false),
-        StemPosition(id: 5, x: 40, y: -85, rotation: 6, mirrored: false),
+        StemPosition(id: 3, x: 80, y: -195, rotation: -4, mirrored: true, size: 85),
+        StemPosition(id: 4, x: 0, y: -145, rotation: -2, mirrored: false, size: 90),
+        StemPosition(id: 5, x: -50, y: -80, rotation: 6, mirrored: false, size: 80),
         
         // Row 3 (front) - 3 stems with varied rotation
-        StemPosition(id: 6, x: -30, y: -60, rotation: -5, mirrored: false),
-        StemPosition(id: 7, x: 0, y: -65, rotation: 2, mirrored: true),
-        StemPosition(id: 8, x: 30, y: -60, rotation: 8, mirrored: false)
+        StemPosition(id: 6, x: -10, y: -60, rotation: -5, mirrored: false, size: 90),
+        StemPosition(id: 7, x: 90, y: -80, rotation: 2, mirrored: true, size: 90),
+        StemPosition(id: 8, x: 140, y: -130, rotation: 8, mirrored: false, size: 90)
     ]
 }
 

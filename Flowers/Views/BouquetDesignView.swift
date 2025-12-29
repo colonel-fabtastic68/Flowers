@@ -99,14 +99,14 @@ struct BouquetDesignView: View {
                     // VASE SIZE - Edit these values:
                     let baseVaseWidth: CGFloat = 650  // ← CHANGE THIS to make vase bigger/smaller
                     let vaseWidth: CGFloat = min(baseVaseWidth, geometry.size.width * 0.95)
-                    let vaseHeight: CGFloat = vaseWidth * 1.14 // Maintain aspect ratio
                     let scale: CGFloat = vaseWidth / baseVaseWidth // Scale factor for different screens
                     
                     ZStack {
-                        // Vase back layer - scales to screen
+                        // Vase back layer - scales to screen, maintains original aspect ratio
                         Image("CustomVase")
                             .resizable()
-                            .frame(width: vaseWidth, height: vaseHeight)
+                            .scaledToFit()
+                            .frame(width: vaseWidth)
                             .shadow(color: Color.black.opacity(0.15), radius: 15, x: 0, y: 8)
                             .zIndex(0)
                         
@@ -119,7 +119,8 @@ struct BouquetDesignView: View {
                                 FlowerHeadView(
                                     color: flowerColor, 
                                     rotation: position.rotation,
-                                    mirrored: position.mirrored
+                                    mirrored: position.mirrored,
+                                    size: position.size  // Individual size per flower
                                 )
                                 .offset(x: position.x * scale, y: position.y * scale) // Scale coordinates
                                 .zIndex(Double(20 + slot.id)) // Flowers above vase
@@ -237,6 +238,7 @@ struct FlowerHeadView: View {
     let color: FlowerColor
     let rotation: Double
     let mirrored: Bool
+    let size: CGFloat  // Individual size for this flower
     
     var imageName: String {
         switch color {
@@ -251,10 +253,9 @@ struct FlowerHeadView: View {
         Image(imageName)
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: 90, height: 90) // Larger flowers for larger vase
+            .frame(width: size, height: size)
             .scaleEffect(x: mirrored ? -1 : 1, y: 1) // Horizontal flip for variety
             .rotationEffect(.degrees(rotation)) // Natural rotation variation
-            .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 3)
     }
 }
 
@@ -280,6 +281,15 @@ struct VaseShape: Shape {
 }
 
 #Preview {
-    BouquetDesignView(viewModel: BouquetViewModel())
+    // Preview with some flowers pre-loaded for faster testing
+    let viewModel = BouquetViewModel()
+    viewModel.addFlowerToNextSlot(color: .yellow)
+    viewModel.addFlowerToNextSlot(color: .purple)
+    viewModel.addFlowerToNextSlot(color: .red)
+    viewModel.addFlowerToNextSlot(color: .yellow)
+    viewModel.addFlowerToNextSlot(color: .purple)
+    viewModel.addFlowerToNextSlot(color: .red)
+    
+    return BouquetDesignView(viewModel: viewModel)
 }
 
