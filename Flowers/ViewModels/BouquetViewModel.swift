@@ -100,7 +100,7 @@ class BouquetViewModel: ObservableObject {
                 self.receivedBouquet = activeBouquet
             }
         } catch {
-            print("Firebase sync error: \(error.localizedDescription)")
+            // Silently fail - app works offline with UserDefaults cache
         }
     }
     
@@ -222,9 +222,8 @@ class BouquetViewModel: ObservableObject {
         Task {
             do {
                 try await firebaseService.sendBouquet(bouquet)
-                print("✅ Bouquet sent to Firebase successfully!")
             } catch {
-                print("❌ Error sending bouquet to Firebase: \(error.localizedDescription)")
+                print("Error sending bouquet: \(error.localizedDescription)")
             }
         }
     }
@@ -239,9 +238,8 @@ class BouquetViewModel: ObservableObject {
         Task {
             do {
                 try await firebaseService.pairUsers(userId: currentUser.id, partnerId: partnerId)
-                print("✅ Users paired in Firebase successfully!")
             } catch {
-                print("❌ Error pairing users in Firebase: \(error.localizedDescription)")
+                print("Error pairing users: \(error.localizedDescription)")
             }
         }
     }
@@ -251,34 +249,6 @@ class BouquetViewModel: ObservableObject {
         return "flowers://invite/\(userId)"
     }
     
-    // MARK: - Testing Functions
-    
-    func testFirebaseConnection() {
-        Task {
-            do {
-                let success = try await firebaseService.testConnection()
-                if success {
-                    print("✅ Firebase connection successful!")
-                    print("🔥 Database is ready to use!")
-                } else {
-                    print("❌ Firebase connection failed")
-                }
-            } catch {
-                print("❌ Firebase error: \(error.localizedDescription)")
-            }
-        }
-    }
-    
-    func testSaveBouquet() {
-        Task {
-            do {
-                try await firebaseService.saveTestBouquet(slots: flowerSlots, userId: currentUser.id)
-                print("✅ Test bouquet saved successfully!")
-            } catch {
-                print("❌ Error saving test bouquet: \(error.localizedDescription)")
-            }
-        }
-    }
     
     private func startTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in

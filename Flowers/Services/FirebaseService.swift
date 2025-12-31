@@ -104,41 +104,5 @@ class FirebaseService {
         ])
     }
     
-    // MARK: - Testing & Debugging
-    
-    func testConnection() async throws -> Bool {
-        // Try to write a test document
-        let testData: [String: Any] = [
-            "timestamp": Date().timeIntervalSince1970,
-            "message": "Firebase connection test successful! 🎉"
-        ]
-        
-        try await db.collection("_test").document("connection").setData(testData)
-        
-        // Try to read it back
-        let doc = try await db.collection("_test").document("connection").getDocument()
-        
-        return doc.exists
-    }
-    
-    func saveTestBouquet(slots: [FlowerSlot], userId: String) async throws {
-        let testData: [String: Any] = [
-            "timestamp": Date().timeIntervalSince1970,
-            "userId": userId,
-            "flowerCount": slots.filter { $0.flowerColor != nil }.count,
-            "slots": slots.filter { $0.flowerColor != nil }.map { slot in
-                [
-                    "id": slot.id,
-                    "color": slot.flowerColor?.rawValue ?? "",
-                    "rotation": slot.rotation ?? 0,
-                    "mirrored": slot.mirrored ?? false
-                ]
-            }
-        ]
-        
-        try await db.collection("test_bouquets").document(UUID().uuidString).setData(testData)
-        print("✅ Test bouquet saved to Firebase!")
-        print("📊 Data: \(testData)")
-    }
 }
 

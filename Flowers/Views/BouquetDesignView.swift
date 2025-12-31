@@ -43,16 +43,6 @@ struct BouquetDesignView: View {
                     
                     Spacer()
                     
-                    // Firebase test button (temporary - remove after testing)
-                    Button(action: {
-                        viewModel.testSaveBouquet()
-                    }) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(.orange)
-                    }
-                    .padding(.trailing, 8)
-                    
                     // Flower counter
                     HStack(spacing: 4) {
                         Image(systemName: "leaf.fill")

@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isValidUserId(userId) {
+      return userId is string && userId.size() > 0;
+    }
+    
+    function isValidBouquet(bouquet) {
+      return bouquet.keys().hasAll(['flowers', 'flowerSlots', 'createdAt', 'expiresAt', 'fromUserId', 'toUserId'])
+        && bouquet.flowers is list
+        && bouquet.flowerSlots is list
+        && bouquet.fromUserId is string
+        && bouquet.toUserId is string;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Anyone can create a user (for initial setup)
+      allow create: if isValidUserId(userId);
+      
+      // Users can read and update their own data
+      allow read, update: if isValidUserId(userId);
+      
+      // Received bouquets subcollection
+      match /receivedBouquets/{bouquetId} {
+        // User can read their own received bouquets
+        allow read: if isValidUserId(userId);
+        
+        // Anyone can write a bouquet to another user (sending)
+        allow create: if isValidBouquet(request.resource.data)
+          && request.resource.data.toUserId == userId;
+        
+        // Users can mark their bouquets as viewed
+        allow update: if isValidUserId(userId);
+        
+        // Users can delete expired bouquets
+        allow delete: if isValidUserId(userId);
+      }
+    }
+    
+    // Bouquets collection (main storage)
+    match /bouquets/{bouquetId} {
+      // Anyone can read bouquets (needed for sender to confirm delivery)
+      allow read: if true;
+      
+      // Anyone can create a bouquet (for sending)
+      allow create: if isValidBouquet(request.resource.data);
+      
+      // Prevent updates and deletes (bouquets are immutable once sent)
+      allow update, delete: if false;
+    }
+    
+    // Block all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
