@@ -20,6 +20,7 @@ class BouquetViewModel: ObservableObject {
     @Published var showingInvite: Bool = false
     
     private var timer: Timer?
+    private let firebaseService = FirebaseService.shared
     
     init() {
         // Load or create user
@@ -31,7 +32,7 @@ class BouquetViewModel: ObservableObject {
     }
     
     func loadData() {
-        // Load from UserDefaults
+        // Load from UserDefaults (local cache)
         if let userData = UserDefaults.standard.data(forKey: "currentUser"),
            let user = try? JSONDecoder().decode(User.self, from: userData) {
             self.currentUser = user
@@ -51,9 +52,15 @@ class BouquetViewModel: ObservableObject {
         }
         
         streakCount = currentUser.streakCount
+        
+        // Sync with Firebase
+        Task {
+            await syncWithFirebase()
+        }
     }
     
     func saveData() {
+        // Save to UserDefaults (local cache)
         if let userData = try? JSONEncoder().encode(currentUser) {
             UserDefaults.standard.set(userData, forKey: "currentUser")
         }
@@ -61,6 +68,39 @@ class BouquetViewModel: ObservableObject {
         if let partner = partner,
            let partnerData = try? JSONEncoder().encode(partner) {
             UserDefaults.standard.set(partnerData, forKey: "partner_\(partner.id)")
+        }
+        
+        // Sync to Firebase
+        Task {
+            try? await firebaseService.saveUser(currentUser)
+        }
+    }
+    
+    private func syncWithFirebase() async {
+        // Try to fetch latest data from Firebase
+        do {
+            if let firebaseUser = try await firebaseService.getUser(userId: currentUser.id) {
+                self.currentUser = firebaseUser
+                self.streakCount = firebaseUser.streakCount
+                
+                // Update local cache
+                if let userData = try? JSONEncoder().encode(firebaseUser) {
+                    UserDefaults.standard.set(userData, forKey: "currentUser")
+                }
+            }
+            
+            // Fetch partner if exists
+            if let partnerId = currentUser.partnerId,
+               let firebasePartner = try await firebaseService.getUser(userId: partnerId) {
+                self.partner = firebasePartner
+            }
+            
+            // Fetch received bouquets
+            if let activeBouquet = try await firebaseService.getActiveBouquet(userId: currentUser.id) {
+                self.receivedBouquet = activeBouquet
+            }
+        } catch {
+            print("Firebase sync error: \(error.localizedDescription)")
         }
     }
     
@@ -136,7 +176,7 @@ class BouquetViewModel: ObservableObject {
     func sendBouquet() {
         guard let partner = partner else { return }
         
-        // Convert slots to flowers for bouquet
+        // Convert slots to flowers for bouquet (legacy compatibility)
         let flowers = flowerSlots.compactMap { slot -> Flower? in
             guard let color = slot.flowerColor else { return nil }
             let position = StemPosition.allPositions[slot.id]
@@ -145,16 +185,19 @@ class BouquetViewModel: ObservableObject {
                 color: color,
                 xPosition: position.x,
                 yPosition: position.y,
-                rotation: position.rotation
+                rotation: slot.rotation ?? 0
             )
         }
         
-        let bouquet = Bouquet(flowers: flowers, fromUserId: currentUser.id, toUserId: partner.id)
+        // Filter to only filled slots for cleaner data
+        let filledSlots = flowerSlots.filter { $0.flowerColor != nil }
         
-        // Save bouquet (in real app, send to backend)
-        if let bouquetData = try? JSONEncoder().encode(bouquet) {
-            UserDefaults.standard.set(bouquetData, forKey: "sentBouquet_\(partner.id)")
-        }
+        let bouquet = Bouquet(
+            flowers: flowers, 
+            flowerSlots: filledSlots, // Include rotation/mirror data!
+            fromUserId: currentUser.id, 
+            toUserId: partner.id
+        )
         
         // Update streak
         if let lastSent = currentUser.lastBouquetSent,
@@ -169,7 +212,21 @@ class BouquetViewModel: ObservableObject {
         currentBouquet = bouquet
         clearAllFlowers()
         
+        // Save to local cache
+        if let bouquetData = try? JSONEncoder().encode(bouquet) {
+            UserDefaults.standard.set(bouquetData, forKey: "sentBouquet_\(partner.id)")
+        }
         saveData()
+        
+        // Send to Firebase
+        Task {
+            do {
+                try await firebaseService.sendBouquet(bouquet)
+                print("✅ Bouquet sent to Firebase successfully!")
+            } catch {
+                print("❌ Error sending bouquet to Firebase: \(error.localizedDescription)")
+            }
+        }
     }
     
     func pairWithPartner(partnerId: String, partnerName: String) {
@@ -177,11 +234,50 @@ class BouquetViewModel: ObservableObject {
         self.partner = partner
         currentUser.partnerId = partnerId
         saveData()
+        
+        // Sync pairing to Firebase
+        Task {
+            do {
+                try await firebaseService.pairUsers(userId: currentUser.id, partnerId: partnerId)
+                print("✅ Users paired in Firebase successfully!")
+            } catch {
+                print("❌ Error pairing users in Firebase: \(error.localizedDescription)")
+            }
+        }
     }
     
     func generateInviteLink() -> String {
         let userId = currentUser.id
         return "flowers://invite/\(userId)"
+    }
+    
+    // MARK: - Testing Functions
+    
+    func testFirebaseConnection() {
+        Task {
+            do {
+                let success = try await firebaseService.testConnection()
+                if success {
+                    print("✅ Firebase connection successful!")
+                    print("🔥 Database is ready to use!")
+                } else {
+                    print("❌ Firebase connection failed")
+                }
+            } catch {
+                print("❌ Firebase error: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    func testSaveBouquet() {
+        Task {
+            do {
+                try await firebaseService.saveTestBouquet(slots: flowerSlots, userId: currentUser.id)
+                print("✅ Test bouquet saved successfully!")
+            } catch {
+                print("❌ Error saving test bouquet: \(error.localizedDescription)")
+            }
+        }
     }
     
     private func startTimer() {

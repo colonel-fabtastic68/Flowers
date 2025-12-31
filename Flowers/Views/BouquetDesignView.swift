@@ -43,6 +43,16 @@ struct BouquetDesignView: View {
                     
                     Spacer()
                     
+                    // Firebase test button (temporary - remove after testing)
+                    Button(action: {
+                        viewModel.testSaveBouquet()
+                    }) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.orange)
+                    }
+                    .padding(.trailing, 8)
+                    
                     // Flower counter
                     HStack(spacing: 4) {
                         Image(systemName: "leaf.fill")
@@ -102,13 +112,13 @@ struct BouquetDesignView: View {
                                 viewModel.clearAllFlowers()
                             }
                         }) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.gray)
+                            Circle()
+                                .fill(Color.white.opacity(0.6))
                                 .frame(width: 44, height: 44)
-                                .background(
-                                    Circle()
-                                        .fill(Color.white.opacity(0.6))
+                                .overlay(
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundColor(.gray)
                                 )
                         }
                         
@@ -118,13 +128,13 @@ struct BouquetDesignView: View {
                                 viewModel.randomizeBouquet()
                             }
                         }) {
-                            Image(systemName: "dice")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(Color(red: 0.89, green: 0.36, blue: 0.38))
+                            Circle()
+                                .fill(Color.white.opacity(0.6))
                                 .frame(width: 44, height: 44)
-                                .background(
-                                    Circle()
-                                        .fill(Color.white.opacity(0.6))
+                                .overlay(
+                                    Image(systemName: "dice")
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundColor(Color(red: 0.89, green: 0.36, blue: 0.38))
                                 )
                         }
                     }
@@ -170,7 +180,7 @@ struct BouquetDesignView: View {
                         }
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
-                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + 25)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2 - 30)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -191,8 +201,8 @@ struct BouquetDesignView: View {
                                 .font(.system(size: 20, weight: .bold))
                         }
                         .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
+                        .padding(.horizontal, 40)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(
@@ -205,7 +215,8 @@ struct BouquetDesignView: View {
                         )
                         .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
                     }
-                    .padding()
+                    .padding(.bottom, 50)
+                    .padding(.horizontal, 20)
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -250,7 +261,7 @@ struct FlowerTypeButton: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 5) {
+            VStack(spacing: 3) {
                 SimpleFlowerView(type: type, color: color, size: 50)
                 Text(type.rawValue)
                     .font(.system(size: 12, weight: .medium))
