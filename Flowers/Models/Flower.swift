@@ -71,25 +71,26 @@ struct StemPosition {
     let id: Int
     let x: Double
     let y: Double
-    let rotation: Double
-    let mirrored: Bool  // Horizontal flip for variety
-    let size: CGFloat   // Individual flower size
+    let rotation: Double  // Base rotation (not used directly, randomized per flower)
+    let mirrored: Bool    // Base mirror (not used directly, randomized per flower)
+    let size: CGFloat     // Individual flower size
+    let zOrder: Double    // Layer ordering (lower = behind, higher = in front)
     
     static let allPositions: [StemPosition] = [
         // Row 1 (back) - 3 stems with varied rotation
-        StemPosition(id: 0, x: -170, y: -150, rotation: -7, mirrored: false, size: 90),
-        StemPosition(id: 1, x: -90, y: -240, rotation: 3, mirrored: true, size: 80),
-        StemPosition(id: 2, x: 30, y: -255, rotation: 9, mirrored: false, size: 75),
+        StemPosition(id: 0, x: -170, y: -150, rotation: -7, mirrored: false, size: 90, zOrder: 1),
+        StemPosition(id: 1, x: -90, y: -240, rotation: 3, mirrored: true, size: 80, zOrder: 2),
+        StemPosition(id: 2, x: 30, y: -255, rotation: 9, mirrored: false, size: 75, zOrder: 3),
         
         // Row 2 (middle) - 3 stems with varied rotation
-        StemPosition(id: 3, x: 80, y: -195, rotation: -4, mirrored: true, size: 85),
-        StemPosition(id: 4, x: 0, y: -145, rotation: -2, mirrored: false, size: 90),
-        StemPosition(id: 5, x: -50, y: -80, rotation: 6, mirrored: false, size: 80),
+        StemPosition(id: 3, x: 80, y: -195, rotation: -4, mirrored: true, size: 85, zOrder: 4),
+        StemPosition(id: 4, x: 0, y: -145, rotation: -2, mirrored: false, size: 90, zOrder: 5),
+        StemPosition(id: 5, x: -50, y: -80, rotation: 6, mirrored: false, size: 80, zOrder: 6),
         
         // Row 3 (front) - 3 stems with varied rotation
-        StemPosition(id: 6, x: -10, y: -60, rotation: -5, mirrored: false, size: 90),
-        StemPosition(id: 7, x: 90, y: -80, rotation: 2, mirrored: true, size: 90),
-        StemPosition(id: 8, x: 140, y: -130, rotation: 8, mirrored: false, size: 90)
+        StemPosition(id: 6, x: -10, y: -60, rotation: -5, mirrored: false, size: 90, zOrder: 8),
+        StemPosition(id: 7, x: 90, y: -80, rotation: 2, mirrored: true, size: 90, zOrder: 9),
+        StemPosition(id: 8, x: 140, y: -130, rotation: 8, mirrored: false, size: 90, zOrder: 7)  // Behind 6 & 7
     ]
 }
 
@@ -97,10 +98,14 @@ struct StemPosition {
 struct FlowerSlot: Identifiable, Codable {
     let id: Int // matches StemPosition.id
     var flowerColor: FlowerColor? // nil = empty slot
+    var rotation: Double? // Random rotation between -10 and +10 degrees
+    var mirrored: Bool? // Random horizontal flip
     
-    init(id: Int, flowerColor: FlowerColor? = nil) {
+    init(id: Int, flowerColor: FlowerColor? = nil, rotation: Double? = nil, mirrored: Bool? = nil) {
         self.id = id
         self.flowerColor = flowerColor
+        self.rotation = rotation
+        self.mirrored = mirrored
     }
 }
 

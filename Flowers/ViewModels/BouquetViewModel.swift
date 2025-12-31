@@ -68,17 +68,34 @@ class BouquetViewModel: ObservableObject {
         // Find first empty slot
         if let emptyIndex = flowerSlots.firstIndex(where: { $0.flowerColor == nil }) {
             flowerSlots[emptyIndex].flowerColor = color
+            // Generate random rotation between -10 and +10 degrees
+            flowerSlots[emptyIndex].rotation = Double.random(in: -10...10)
+            // Random horizontal flip for variety
+            flowerSlots[emptyIndex].mirrored = Bool.random()
         }
     }
     
     func removeFlowerFromSlot(slotId: Int) {
         if let index = flowerSlots.firstIndex(where: { $0.id == slotId }) {
             flowerSlots[index].flowerColor = nil
+            flowerSlots[index].rotation = nil
+            flowerSlots[index].mirrored = nil
         }
     }
     
     func clearAllFlowers() {
         flowerSlots = (0..<9).map { FlowerSlot(id: $0) }
+    }
+    
+    func randomizeBouquet() {
+        // Fill all 9 slots with random flowers
+        let colors: [FlowerColor] = [.yellow, .purple, .red]
+        for i in 0..<9 {
+            let randomColor = colors.randomElement() ?? .yellow
+            flowerSlots[i].flowerColor = randomColor
+            flowerSlots[i].rotation = Double.random(in: -10...10)
+            flowerSlots[i].mirrored = Bool.random()
+        }
     }
     
     var filledSlotsCount: Int {

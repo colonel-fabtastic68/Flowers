@@ -61,37 +61,74 @@ struct BouquetDesignView: View {
                 }
                 .padding()
                 
-                // Flower selection at top - just 3 types
-                HStack(spacing: 40) {
-                        FlowerAddButton(imageName: "YellowFlower") {
-                            if viewModel.canAddMoreFlowers {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                                    viewModel.addFlowerToNextSlot(color: .yellow)
+                VStack(spacing: 8) {
+                    // Flower selection at top - just 3 types
+                    HStack(spacing: 40) {
+                            FlowerAddButton(imageName: "YellowFlower") {
+                                if viewModel.canAddMoreFlowers {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                        viewModel.addFlowerToNextSlot(color: .yellow)
+                                    }
+                                }
+                            }
+                            
+                            FlowerAddButton(imageName: "PurpleFlower") {
+                                if viewModel.canAddMoreFlowers {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                        viewModel.addFlowerToNextSlot(color: .purple)
+                                    }
+                                }
+                            }
+                            
+                            FlowerAddButton(imageName: "RedFlower") {
+                                if viewModel.canAddMoreFlowers {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                        viewModel.addFlowerToNextSlot(color: .red)
+                                    }
                                 }
                             }
                         }
-                        
-                        FlowerAddButton(imageName: "PurpleFlower") {
-                            if viewModel.canAddMoreFlowers {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                                    viewModel.addFlowerToNextSlot(color: .purple)
-                                }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.white.opacity(0.8))
+                    )
+                    
+                    // Action buttons: Clear and Random
+                    HStack(spacing: 20) {
+                        // Clear all button
+                        Button(action: {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                viewModel.clearAllFlowers()
                             }
+                        }) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(.gray)
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    Circle()
+                                        .fill(Color.white.opacity(0.6))
+                                )
                         }
                         
-                        FlowerAddButton(imageName: "RedFlower") {
-                            if viewModel.canAddMoreFlowers {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                                    viewModel.addFlowerToNextSlot(color: .red)
-                                }
+                        // Random bouquet button
+                        Button(action: {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+                                viewModel.randomizeBouquet()
                             }
+                        }) {
+                            Image(systemName: "dice")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(Color(red: 0.89, green: 0.36, blue: 0.38))
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    Circle()
+                                        .fill(Color.white.opacity(0.6))
+                                )
                         }
                     }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.white.opacity(0.8))
-                )
+                }
                 .padding(.horizontal)
                 
                 // Vase area with snap-to flowers
@@ -118,12 +155,12 @@ struct BouquetDesignView: View {
                             if let flowerColor = slot.flowerColor {
                                 FlowerHeadView(
                                     color: flowerColor, 
-                                    rotation: position.rotation,
-                                    mirrored: position.mirrored,
+                                    rotation: slot.rotation ?? 0,  // Use slot's random rotation
+                                    mirrored: slot.mirrored ?? false,  // Use slot's random mirror
                                     size: position.size  // Individual size per flower
                                 )
                                 .offset(x: position.x * scale, y: position.y * scale) // Scale coordinates
-                                .zIndex(Double(20 + slot.id)) // Flowers above vase
+                                .zIndex(20 + position.zOrder) // Custom layer ordering
                                 .onTapGesture {
                                     withAnimation(.spring(response: 0.3)) {
                                         viewModel.removeFlowerFromSlot(slotId: slot.id)
@@ -213,7 +250,7 @@ struct FlowerTypeButton: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: 5) {
                 SimpleFlowerView(type: type, color: color, size: 50)
                 Text(type.rawValue)
                     .font(.system(size: 12, weight: .medium))
