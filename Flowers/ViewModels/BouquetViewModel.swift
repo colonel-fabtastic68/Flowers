@@ -23,8 +23,22 @@ class BouquetViewModel: ObservableObject {
     private let firebaseService = FirebaseService.shared
     
     init() {
-        // Load or create user
-        self.currentUser = User(id: UUID().uuidString, name: "You")
+        // Try to load existing user from keychain
+        if let savedUserId = KeychainHelper.shared.getUserId(),
+           let userData = UserDefaults.standard.data(forKey: "currentUser"),
+           let user = try? JSONDecoder().decode(User.self, from: userData) {
+            self.currentUser = user
+        } else {
+            // Create new user with unique code
+            let newUser = User(
+                id: UUID().uuidString,
+                code: User.generateCode(),
+                name: "You"
+            )
+            self.currentUser = newUser
+            KeychainHelper.shared.saveUserId(newUser.id)
+        }
+        
         // Initialize 9 empty slots
         self.flowerSlots = (0..<9).map { FlowerSlot(id: $0) }
         loadData()
@@ -229,7 +243,7 @@ class BouquetViewModel: ObservableObject {
     }
     
     func pairWithPartner(partnerId: String, partnerName: String) {
-        let partner = User(id: partnerId, name: partnerName)
+        let partner = User(id: partnerId, code: "0000", name: partnerName)
         self.partner = partner
         currentUser.partnerId = partnerId
         saveData()
@@ -241,6 +255,57 @@ class BouquetViewModel: ObservableObject {
             } catch {
                 print("Error pairing users: \(error.localizedDescription)")
             }
+        }
+    }
+    
+    // Pair with partner using their 4-digit code
+    func pairWithCode(_ code: String) async -> Bool {
+        do {
+            guard let partner = try await firebaseService.getUserByCode(code) else {
+                return false
+            }
+            
+            // Don't pair with yourself
+            guard partner.id != currentUser.id else {
+                return false
+            }
+            
+            self.partner = partner
+            currentUser.partnerId = partner.id
+            saveData()
+            
+            // Sync pairing to Firebase
+            try await firebaseService.pairUsers(userId: currentUser.id, partnerId: partner.id)
+            
+            return true
+        } catch {
+            print("Error pairing with code: \(error.localizedDescription)")
+            return false
+        }
+    }
+    
+    // Restore account from 4-digit code (for new device)
+    func restoreFromCode(_ code: String) async -> Bool {
+        do {
+            guard let user = try await firebaseService.getUserByCode(code) else {
+                return false
+            }
+            
+            // Update current user
+            self.currentUser = user
+            self.streakCount = user.streakCount
+            
+            // Save to keychain and UserDefaults
+            KeychainHelper.shared.saveUserId(user.id)
+            saveData()
+            
+            // Sync with Firebase to get partner and bouquets
+            await syncWithFirebase()
+            
+            return true
+        } catch {
+            print("Error restoring from code: \(error.localizedDescription)")
+            return false
         }
     }
     

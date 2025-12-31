@@ -10,6 +10,7 @@ import MessageUI
 
 struct HomeView: View {
     @ObservedObject var viewModel: BouquetViewModel
+    @State private var showingPairingView = false
     @State private var showingDesignView = false
     
     var body: some View {
@@ -21,67 +22,155 @@ struct HomeView: View {
             )
             .ignoresSafeArea()
             
-            // Welcome view
             VStack(spacing: 30) {
                 Spacer()
                 
-                VStack(spacing: 20) {
-                    // Large flower icon
-                    ZStack {
-                        Circle()
-                            .fill(Color.white.opacity(0.8))
-                            .frame(width: 150, height: 150)
-                            .shadow(color: Color.black.opacity(0.1), radius: 20)
-                        
-                        SimpleFlowerView(type: .tulip, color: .yellow, size: 80)
+                // Main content
+                if viewModel.hasPartner {
+                    // Has partner - show send flowers button
+                    VStack(spacing: 20) {
+                        VStack(spacing: 20) {
+                            // Large flower icon
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white.opacity(0.8))
+                                    .frame(width: 150, height: 150)
+                                    .shadow(color: Color.black.opacity(0.1), radius: 20)
+                                
+                                SimpleFlowerView(type: .tulip, color: .yellow, size: 80)
+                            }
+                            
+                            Text("Ready to Send?")
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(red: 0.3, green: 0.25, blue: 0.3))
+                            
+                            if let partner = viewModel.partner {
+                                Text("Sending to \(partner.name)")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            // Streak
+                            HStack(spacing: 12) {
+                                Image(systemName: "flame.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.orange)
+                                Text("\(viewModel.streakCount) Day Streak")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.orange)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.8))
+                            )
+                        }
                     }
-                    
-                    Text("Welcome to Bouquet")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(Color(red: 0.3, green: 0.25, blue: 0.3))
-                    
-                    Text("Share beautiful flower bouquets\nwith your loved one")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
+                } else {
+                    // No partner - show welcome
+                    VStack(spacing: 20) {
+                        // Large flower icon
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.8))
+                                .frame(width: 150, height: 150)
+                                .shadow(color: Color.black.opacity(0.1), radius: 20)
+                            
+                            SimpleFlowerView(type: .tulip, color: .yellow, size: 80)
+                        }
+                        
+                        Text("Welcome to Flowers")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(red: 0.3, green: 0.25, blue: 0.3))
+                        
+                        Text("Share beautiful flower bouquets\nwith someone special")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
                 }
                 
                 Spacer()
                 
+                // Buttons
                 VStack(spacing: 16) {
-                    Button(action: {
-                        showingDesignView = true
-                    }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "envelope.fill")
-                                .font(.system(size: 20))
-                            Text("Invite Your Partner")
-                                .font(.system(size: 20, weight: .bold))
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color(red: 0.89, green: 0.36, blue: 0.38), Color(red: 0.95, green: 0.55, blue: 0.57)],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
+                    if viewModel.hasPartner {
+                        Button(action: {
+                            showingDesignView = true
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "heart.fill")
+                                    .font(.system(size: 20))
+                                Text("Create Bouquet")
+                                    .font(.system(size: 20, weight: .bold))
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color(red: 0.89, green: 0.36, blue: 0.38), Color(red: 0.95, green: 0.55, blue: 0.57)],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
                                     )
-                                )
-                        )
-                        .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                            )
+                            .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                        }
+                        
+                        Button(action: {
+                            showingPairingView = true
+                        }) {
+                            HStack(spacing: 8) {
+                                Text("Your Code:")
+                                    .font(.system(size: 14))
+                                Text(viewModel.currentUser.code)
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                                    .tracking(3)
+                            }
+                            .foregroundColor(Color(red: 0.89, green: 0.36, blue: 0.38))
+                        }
+                    } else {
+                        Button(action: {
+                            showingPairingView = true
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "person.badge.plus.fill")
+                                    .font(.system(size: 20))
+                                Text("Connect with Partner")
+                                    .font(.system(size: 20, weight: .bold))
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color(red: 0.89, green: 0.36, blue: 0.38), Color(red: 0.95, green: 0.55, blue: 0.57)],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                            )
+                            .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
+                        }
+                        
+                        Text("Each bouquet lasts 24 hours\nKeep your streak going!")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
                     }
-                    
-                    Text("Each bouquet lasts 24 hours\nKeep your streak going!")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
                 }
                 .padding()
             }
             .padding()
+        }
+        .fullScreenCover(isPresented: $showingPairingView) {
+            PairingView(viewModel: viewModel)
         }
         .fullScreenCover(isPresented: $showingDesignView) {
             BouquetDesignView(viewModel: viewModel)

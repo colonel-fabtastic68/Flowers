@@ -53,6 +53,19 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     
+    // Codes collection (4-digit code to userId mapping)
+    match /codes/{code} {
+      // Anyone can read codes (needed for pairing)
+      allow read: if true;
+      
+      // Anyone can create a code (when creating account)
+      allow create: if request.resource.data.keys().hasAll(['userId', 'createdAt'])
+        && request.resource.data.userId is string;
+      
+      // Codes are immutable (can't change or delete)
+      allow update, delete: if false;
+    }
+    
     // Block all other collections
     match /{document=**} {
       allow read, write: if false;

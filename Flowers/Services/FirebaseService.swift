@@ -21,6 +21,7 @@ class FirebaseService {
     func saveUser(_ user: User) async throws {
         let userData: [String: Any] = [
             "id": user.id,
+            "code": user.code,
             "name": user.name,
             "partnerId": user.partnerId ?? "",
             "streakCount": user.streakCount,
@@ -28,6 +29,12 @@ class FirebaseService {
         ]
         
         try await db.collection("users").document(user.id).setData(userData)
+        
+        // Also save to codes collection for lookup (code -> userId mapping)
+        try await db.collection("codes").document(user.code).setData([
+            "userId": user.id,
+            "createdAt": Date().timeIntervalSince1970
+        ])
     }
     
     func getUser(userId: String) async throws -> User? {
@@ -42,11 +49,32 @@ class FirebaseService {
         
         return User(
             id: data["id"] as? String ?? userId,
+            code: data["code"] as? String ?? "0000",
             name: data["name"] as? String ?? "User",
             partnerId: data["partnerId"] as? String,
             streakCount: data["streakCount"] as? Int ?? 0,
             lastBouquetSent: lastBouquetSent
         )
+    }
+    
+    // Look up user by their 4-digit code
+    func getUserByCode(_ code: String) async throws -> User? {
+        // First, find the userId from the codes collection
+        let codeDoc = try await db.collection("codes").document(code).getDocument()
+        
+        guard let codeData = codeDoc.data(),
+              let userId = codeData["userId"] as? String else {
+            return nil
+        }
+        
+        // Then fetch the full user data
+        return try await getUser(userId: userId)
+    }
+    
+    // Check if a code is available
+    func isCodeAvailable(_ code: String) async throws -> Bool {
+        let doc = try await db.collection("codes").document(code).getDocument()
+        return !doc.exists
     }
     
     // MARK: - Bouquet Operations
